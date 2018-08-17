@@ -4,6 +4,7 @@
 #include<netinet/in.h>
 #include<stdlib.h>
 #include<string.h>
+#include<time.h>
 
 void error(char* msg) {
   perror(msg);
@@ -60,13 +61,27 @@ int main(int argc, char const *argv[]) {
         if(n < 0) error("Error reading from socket");
 
         // Message generation
-        char* greeting = "Good Morning, ";
-        char message[100];
-        strcpy(message,greeting);
-        strcat(message,buffer);
-        message[strlen(buffer) + 13] = '!';
-        message[strlen(buffer) + 14] = '\0';
+        time_t curtime;
+        struct tm *loc_time;
+        curtime = time (NULL);
+        loc_time = localtime (&curtime);
+        int hour = loc_time->tm_hour;
 
+        char* greeting;
+
+        if( hour >= 4 && hour < 12) {
+            greeting = "Good Morning, ";
+        } else if( hour >= 12 && hour < 17) {
+            greeting = "Good Afternoon, ";
+        } else if( hour >= 17 && hour < 20) {
+            greeting = "Good Evening, ";
+        } else if( hour >= 20 || hour < 4) {
+            greeting = "Good Night, ";
+        }
+
+        char message[100];
+        buffer[strlen(buffer)- 1] = '!';
+        int k=sprintf (message, "%s%s\0", greeting,buffer);
         n = write(acceptfd,message,strlen(message));
         if(n < 0) error("Error writing to socket");
     }
