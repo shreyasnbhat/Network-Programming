@@ -6,12 +6,18 @@
 #include <string.h>
 #include <time.h>
 #include <pthread.h>
+#include <signal.h>
 
 int MAX_QUEUE = 20;
 
 int active_threads = 0;
 int generated_threads = 0;
 pthread_mutex_t lock;
+
+void on_thread_completion(int sig)
+{
+        printf("Active: %d  Generated: %d\n",active_threads,generated_threads);
+}
 
 void error(char* msg) {
         perror(msg);
@@ -74,7 +80,8 @@ void *handler(void *socket_descriptor) {
         active_threads--;
         pthread_mutex_unlock(&lock);
 
-        printf("Active: %d  Generated: %d\n",active_threads,generated_threads);
+        raise(SIGUSR1);
+
         return NULL;
 }
 
@@ -90,6 +97,8 @@ int main(int argc, char const *argv[]) {
                         printf("\n mutex init has failed\n");
                         return 1;
                 }
+
+                signal(SIGUSR1,on_thread_completion);
 
                 char buffer[256];
                 struct sockaddr_in server_addr,client_addr;
@@ -128,7 +137,6 @@ int main(int argc, char const *argv[]) {
                         pthread_mutex_unlock(&lock);
 
                         generated_threads++;
-
                         printf("Active: %d  Generated: %d\n",active_threads,generated_threads);
 
                 }
